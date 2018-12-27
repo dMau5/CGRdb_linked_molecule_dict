@@ -1,8 +1,9 @@
 from CGRtools.containers import MoleculeContainer
+from CGRdb import Molecule, User
 from collections import MutableMapping
 from itertools import chain
 from pony.orm import db_session
-from CGRdb import Molecule, User
+
 
 
 class CGRdbDict(MutableMapping):

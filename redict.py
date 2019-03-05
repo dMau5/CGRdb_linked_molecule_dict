@@ -1,9 +1,9 @@
-from CGRdb import Molecule, User
 from CGRtools.containers import MoleculeContainer
 from collections import MutableMapping
 from itertools import chain
 from pony.orm import db_session
-
+from CGRdb import Molecule
+from CGRdb.database import user
 
 
 class CGRdbDict(MutableMapping):
@@ -23,7 +23,7 @@ class CGRdbDict(MutableMapping):
         if isinstance(key, MoleculeContainer):
             with db_session:
                 if not Molecule[self._name].structure_exists(key):
-                    Molecule[self._name](key, User[self._name][1])
+                    Molecule[self._name](key, user[self._name][1])
             self._molecule_dict[bytes(key)] = value
         else:
             self._dict[key] = value

@@ -3,15 +3,14 @@ from collections import MutableMapping
 from itertools import chain
 from pony.orm import db_session
 from CGRdb import Molecule
-from CGRdb.database import user
+from CGRdbUser import User
 
 
 class CGRdbDict(MutableMapping):
 
-    def __init__(self, name='sandbox'):
+    def __init__(self):
         self._dict = {}
         self._molecule_dict = {}
-        self._name = name
 
     def __getitem__(self, key):
         if isinstance(key, MoleculeContainer):
@@ -22,8 +21,8 @@ class CGRdbDict(MutableMapping):
     def __setitem__(self, key, value):
         if isinstance(key, MoleculeContainer):
             with db_session:
-                if not Molecule[self._name].structure_exists(key):
-                    Molecule[self._name](key, user[self._name][1])
+                if not Molecule.structure_exists(key):
+                    Molecule(key, User[1])
             self._molecule_dict[bytes(key)] = value
         else:
             self._dict[key] = value
@@ -35,7 +34,7 @@ class CGRdbDict(MutableMapping):
             del self._dict[key]
 
     def __iter__(self):
-        return chain(self._dict, (Molecule[self._name].find_structure(x).structure for x in self._molecule_dict))
+        return chain(self._dict, (Molecule.find_structure(x).structure for x in self._molecule_dict))
 
     def __len__(self):
         return len(self._dict) + len(self._molecule_dict)

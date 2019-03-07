@@ -47,7 +47,8 @@ if __name__ == '__main__':
             inp.put(x)
         for _ in range(12):
             Process(target=worker, args=inp).start()
-
+        for _ in range(12):
+            inp.put('STOP')
         # n = 0
         # while True:
         #     sleep(1)
@@ -82,8 +83,7 @@ if __name__ == '__main__':
         #     #     for e in islice(reactions, 100):
         #     #         inp.put(e)
         #
-        # for _ in range(12):
-        #     inp.put('STOP')
+
     # with open('biggest_graph.pickle', 'wb') as file:
     #     pickle.dump(g, file)
     #     print('URAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')

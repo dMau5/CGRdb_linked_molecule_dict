@@ -31,16 +31,18 @@ def worker(input_queue):
 
 
 if __name__ == '__main__':
-    db = load_schema('profile')
+    db = load_schema('sandbox')
     with open('final.rdf', 'r', encoding='utf-8') as f:
         reactions = RDFread(f)
         print('work')
         # g = CGRdbDigraph()
         inp = Queue()
-        for x in reactions:
-            inp.put(x)
         for _ in range(12):
-            Process(target=worker, args=inp).start()
+            Process(target=worker, args=(inp,)).start()
+        for i, x in enumerate(reactions):
+            if not i % 100:
+                print(f'--------{i} done--------')
+            inp.put(x)
         for _ in range(12):
             inp.put('STOP')
         # n = 0

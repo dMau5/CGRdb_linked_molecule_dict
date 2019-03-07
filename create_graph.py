@@ -13,12 +13,6 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 
 
-# with open('biggest_graph.pickle', 'rb') as f:
-#     db = load_schema('sandbox', user='postgres', password='jyvt0n3', host='localhost', database='postgres')
-#     g = pickle.load(f)
-#     q = 5
-
-
 def worker(input_queue):
     for r in iter(input_queue.get, 'STOP'):
         try:

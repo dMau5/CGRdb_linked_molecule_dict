@@ -19,11 +19,19 @@ logging.basicConfig(level=logging.ERROR)
 #     q = 5
 
 
-def worker(input_queue, output_queue):
+def worker(input_queue):
     for r in iter(input_queue.get, 'STOP'):
         try:
             r.standardize()
-            output_queue.put(r)
+            with db_session:
+                for reactant in r.reactants:
+                    # if isinstance(reactant, MoleculeContainer):
+                    if not Molecule.structure_exists(reactant):
+                        Molecule(reactant, User[1])
+                    # g.add_edge(reactant, n)
+                for product in r.products:
+                    if not Molecule.structure_exists(product):
+                        Molecule(product, User[1])
         except:
             continue
 
@@ -37,45 +45,42 @@ if __name__ == '__main__':
         inp = Queue()
         for x in islice(reactions, 100):
             inp.put(x)
-        out = Queue()
         for _ in range(12):
-            Process(target=worker, args=(inp, out)).start()
+            Process(target=worker, args=inp).start()
 
         n = 0
         while True:
-            with db_session:
-                sleep(1)
-                q1 = out.qsize()
-                q2 = inp.qsize()
-                if q1:
-                    # print('do output', q1, q2)
-                    for _ in range(q1):
-                        r = out.get()
-                        # g.add_node(n, data=[r.meta['source_id'], r.meta['text']])
-                        for reactant in r.reactants:
-                            # if isinstance(reactant, MoleculeContainer):
-                            if not Molecule.structure_exists(reactant):
-                                Molecule(reactant, User[1])
-                            # g.add_edge(reactant, n)
-                        for product in r.products:
-                            if not Molecule.structure_exists(product):
-                                Molecule(product, User[1])
-                            # g.add_edge(n, product)
-                        n += 1
-                        if not n % 100:
-                            print(f'--------{n} done--------')
-                            # break
-                        try:
-                            inp.put(next(reactions))
-                        except StopIteration:
-                            break
-                    else:
-                        continue
-                    break
-                elif not q2:
-                    # print('do input')
-                    for e in islice(reactions, 100):
-                        inp.put(e)
+            sleep(1)
+            q1 = inp.qsize()
+            if q1:
+                # print('do output', q1, q2)
+                for _ in range(q1):
+                    r = inp.get()
+                    # g.add_node(n, data=[r.meta['source_id'], r.meta['text']])
+                    for reactant in r.reactants:
+                        # if isinstance(reactant, MoleculeContainer):
+                        if not Molecule.structure_exists(reactant):
+                            Molecule(reactant, User[1])
+                        # g.add_edge(reactant, n)
+                    for product in r.products:
+                        if not Molecule.structure_exists(product):
+                            Molecule(product, User[1])
+                        # g.add_edge(n, product)
+                    n += 1
+                    if not n % 100:
+                        print(f'--------{n} done--------')
+                        # break
+                    try:
+                        inp.put(next(reactions))
+                    except StopIteration:
+                        break
+                else:
+                    continue
+                break
+            # elif not q2:
+            #     # print('do input')
+            #     for e in islice(reactions, 100):
+            #         inp.put(e)
 
         for _ in range(12):
             inp.put('STOP')

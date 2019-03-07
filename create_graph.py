@@ -1,4 +1,4 @@
-from CGRdb import load_schema
+from CGRdb import load_schema, Molecule
 from CGRdbUser import User
 from pony.orm import db_session
 from CGRtools.files import RDFread
@@ -13,33 +13,27 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 
 
+# with open('biggest_graph.pickle', 'rb') as f:
+#     db = load_schema('sandbox', user='postgres', password='jyvt0n3', host='localhost', database='postgres')
+#     g = pickle.load(f)
+#     q = 5
+
+
 def worker(input_queue, output_queue):
     for r in iter(input_queue.get, 'STOP'):
-        flag = False
-        if r.reactants and r.products:
-            for reactant in r.reactants:
-                try:
-                    reactant.aromatize()
-                except:
-                    flag = True
-                    break
-            for product in r.products:
-                try:
-                    product.aromatize()
-                except:
-                    flag = True
-                    break
-            if flag:
-                continue
+        try:
+            r.standardize()
             output_queue.put(r)
+        except:
+            continue
 
 
 if __name__ == '__main__':
-    db = load_schema()
+    db = load_schema('profile')
     with open('final.rdf', 'r', encoding='utf-8') as f:
         reactions = RDFread(f)
         print('work')
-        g = CGRdbDigraph()
+        # g = CGRdbDigraph()
         inp = Queue()
         for x in islice(reactions, 100):
             inp.put(x)
@@ -56,16 +50,22 @@ if __name__ == '__main__':
                 # print('do output', q1, q2)
                 for _ in range(q1):
                     r = out.get()
-                    r.standardize()
-                    g.add_node(n, data=[r.meta['source_id'], r.meta['text']])
+                    # g.add_node(n, data=[r.meta['source_id'], r.meta['text']])
                     for reactant in r.reactants:
-                        g.add_edge(reactant, n)
+                        # if isinstance(reactant, MoleculeContainer):
+                        with db_session:
+                            if not Molecule.structure_exists(reactant):
+                                Molecule(reactant, User[1])
+                        # g.add_edge(reactant, n)
                     for product in r.products:
-                        g.add_edge(n, product)
+                        with db_session:
+                            if not Molecule.structure_exists(product):
+                                Molecule(product, User[1])
+                        # g.add_edge(n, product)
                     n += 1
                     if not n % 100:
                         print(f'--------{n} done--------')
-                        break
+                        # break
                     try:
                         inp.put(next(reactions))
                     except StopIteration:
@@ -80,6 +80,6 @@ if __name__ == '__main__':
 
         for _ in range(12):
             inp.put('STOP')
-    with open('biggest_graph.pickle', 'wb') as file:
-        pickle.dump(g, file)
-        print('URAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+    # with open('biggest_graph.pickle', 'wb') as file:
+    #     pickle.dump(g, file)
+    #     print('URAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')

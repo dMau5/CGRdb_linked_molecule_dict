@@ -43,40 +43,39 @@ if __name__ == '__main__':
 
         n = 0
         while True:
-            sleep(1)
-            q1 = out.qsize()
-            q2 = inp.qsize()
-            if q1:
-                # print('do output', q1, q2)
-                for _ in range(q1):
-                    r = out.get()
-                    # g.add_node(n, data=[r.meta['source_id'], r.meta['text']])
-                    for reactant in r.reactants:
-                        # if isinstance(reactant, MoleculeContainer):
-                        with db_session:
+            with db_session:
+                sleep(1)
+                q1 = out.qsize()
+                q2 = inp.qsize()
+                if q1:
+                    # print('do output', q1, q2)
+                    for _ in range(q1):
+                        r = out.get()
+                        # g.add_node(n, data=[r.meta['source_id'], r.meta['text']])
+                        for reactant in r.reactants:
+                            # if isinstance(reactant, MoleculeContainer):
                             if not Molecule.structure_exists(reactant):
                                 Molecule(reactant, User[1])
-                        # g.add_edge(reactant, n)
-                    for product in r.products:
-                        with db_session:
+                            # g.add_edge(reactant, n)
+                        for product in r.products:
                             if not Molecule.structure_exists(product):
                                 Molecule(product, User[1])
-                        # g.add_edge(n, product)
-                    n += 1
-                    if not n % 100:
-                        print(f'--------{n} done--------')
-                        # break
-                    try:
-                        inp.put(next(reactions))
-                    except StopIteration:
-                        break
-                else:
-                    continue
-                break
-            elif not q2:
-                # print('do input')
-                for e in islice(reactions, 100):
-                    inp.put(e)
+                            # g.add_edge(n, product)
+                        n += 1
+                        if not n % 100:
+                            print(f'--------{n} done--------')
+                            # break
+                        try:
+                            inp.put(next(reactions))
+                        except StopIteration:
+                            break
+                    else:
+                        continue
+                    break
+                elif not q2:
+                    # print('do input')
+                    for e in islice(reactions, 100):
+                        inp.put(e)
 
         for _ in range(12):
             inp.put('STOP')
